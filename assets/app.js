@@ -132,7 +132,7 @@
         ['briefing.html', 'brief', '주간 브리핑', '사서가 고른 한 주의 생성형 AI 소식', (D.briefings || []).length + '회']
       ].map(function (t) {
         return '<a class="tile" href="' + t[0] + '"><span class="tile-icon">' + ICON[t[1]] + '</span>' +
-          '<strong>' + t[2] + '</strong><span>' + t[3] + '</span><em>' + t[4] + ' 보기 →</em></a>';
+          '<strong>' + t[2] + '</strong><span>' + t[3] + '</span></a>';
       }).join('');
     }
     var latest = $('#latest');
@@ -146,7 +146,7 @@
         ['resources.html#tag-agent', '업무', '업무 자동화와 AI 에이전트', '반복 업무를 맡기는 에이전트의 개념과 설계 원칙을 다룬 자료입니다.', n(function (r) { return r.tags.indexOf('AI 에이전트') >= 0; })]
       ].map(function (c) {
         return '<a class="collection" href="' + c[0] + '"><span class="kicker">' + c[1] + '</span><strong>' + c[2] +
-          '</strong><p>' + c[3] + '</p><em>자료 ' + c[4] + '건 보기 →</em></a>';
+          '</strong><p>' + c[3] + '</p></a>';
       }).join('');
     }
     var form = $('#home-search');
