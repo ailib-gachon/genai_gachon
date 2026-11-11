@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>관리자 | GAiA 생성형 AI 자료실</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="admin">
+<div id="site-header"></div>
+
+<main id="main">
+<section class="page-head">
+  <div class="wrap">
+    <span class="crumb"><a href="index.html">홈</a> / 관리자</span>
+    <h1>자료 관리</h1>
+    <p>유튜브·블로그·GitHub 주소를 붙여 넣으면 정보를 자동으로 채웁니다. 대상·난이도·사서 한마디를 적고 목록에 추가한 뒤, 한 번에 저장하세요.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap admin">
+
+    <!-- 연결 설정 -->
+    <details class="panel" id="conn" open>
+      <summary><strong>GitHub 연결</strong> <span id="conn-state" class="pill-state">연결 안 됨 · 사이트 데이터 보기 모드</span></summary>
+      <div class="panel-body">
+        <p class="hint">저장소 정보와 토큰을 넣으면 '저장' 버튼으로 바로 커밋합니다. 토큰이 없으면 수정한 데이터 파일을 내려받아 GitHub에 직접 올리면 됩니다. 토큰 발급 방법은 README에 있습니다.</p>
+        <div class="fgrid">
+          <label>계정(소유자)<input id="c-owner" placeholder="예: gachon-library" autocomplete="off"></label>
+          <label>저장소<input id="c-repo" placeholder="예: gaia-ai-library" autocomplete="off"></label>
+          <label>브랜치<input id="c-branch" value="main" autocomplete="off"></label>
+          <label>데이터 파일 경로<input id="c-path" value="data/resources.js" autocomplete="off"></label>
+          <label class="span2">토큰 (Fine-grained, 이 저장소의 Contents 읽기·쓰기)<input id="c-token" type="password" placeholder="github_pat_…" autocomplete="off"></label>
+        </div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="c-remember"> 이 브라우저에 토큰 기억하기 (공용 PC에서는 끄세요)</label>
+        </div>
+        <div class="row">
+          <button type="button" class="btn btn-navy" id="c-connect">연결하고 최신 데이터 불러오기</button>
+          <button type="button" class="btn btn-line" id="c-forget">저장된 설정 지우기</button>
+        </div>
+        <p class="msg" id="c-msg" role="status"></p>
+      </div>
+    </details>
+
+    <!-- 탭 -->
+    <div class="tabs" role="tablist" aria-label="작업 선택">
+      <button type="button" role="tab" class="tab" data-tab="video" aria-selected="true">영상 추가</button>
+      <button type="button" role="tab" class="tab" data-tab="blog" aria-selected="false">블로그·아티클 추가</button>
+      <button type="button" role="tab" class="tab" data-tab="repo" aria-selected="false">GitHub 추가</button>
+      <button type="button" role="tab" class="tab" data-tab="manage" aria-selected="false">목록 관리</button>
+    </div>
+
+    <!-- 추가/수정 폼 (유형 공통) -->
+    <div class="panel" id="form-panel">
+      <div class="panel-body">
+        <p class="edit-banner" id="edit-banner" hidden>수정 중: <strong id="edit-title"></strong> <button type="button" class="linkbtn" id="edit-cancel">수정 취소</button></p>
+
+        <div class="fgrid">
+          <label class="span2"><span id="f-url-label">유튜브 주소</span>
+            <span class="inline">
+              <input id="f-url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
+              <button type="button" class="btn btn-lav" id="f-fetch">정보 불러오기</button>
+            </span>
+          </label>
+          <p class="msg span2" id="f-fetch-msg" role="status"></p>
+
+          <label class="span2">제목<input id="f-title" autocomplete="off"></label>
+          <label><span id="f-source-label">채널</span><input id="f-source" autocomplete="off"></label>
+          <label><span id="f-date-label">게시일</span><input id="f-date" type="month"></label>
+          <label>언어
+            <select id="f-lang"><option>한국어</option><option>영어</option><option>한국어 자막</option><option>한국어 번역</option><option>한국어 포함</option><option>다국어</option></select>
+          </label>
+          <fieldset><legend>난이도</legend>
+            <label class="check"><input type="radio" name="f-level" value="입문" checked> 입문</label>
+            <label class="check"><input type="radio" name="f-level" value="활용"> 활용</label>
+            <label class="check"><input type="radio" name="f-level" value="심화"> 심화</label>
+          </fieldset>
+          <fieldset class="span2"><legend>대상 (하나 이상)</legend>
+            <label class="check"><input type="checkbox" name="f-aud" value="학생" checked> 학생</label>
+            <label class="check"><input type="checkbox" name="f-aud" value="교원" checked> 교원</label>
+            <label class="check"><input type="checkbox" name="f-aud" value="직원" checked> 직원</label>
+          </fieldset>
+          <label class="span2">태그 (쉼표로 구분)<input id="f-tags" placeholder="예: 프롬프트, ChatGPT" autocomplete="off"></label>
+          <div class="span2 tag-suggest" id="f-tag-suggest" aria-label="기존 태그"></div>
+          <label class="span2">사서 한마디 <span class="counter" id="f-count">0 / 120</span>
+            <textarea id="f-comment" rows="3" maxlength="200" placeholder="왜 볼 만한지, 누구에게 권하는지 1~2문장으로"></textarea>
+          </label>
+          <p class="hint span2" id="f-desc-hint" hidden></p>
+          <div class="span2 row">
+            <label class="check" id="f-own-wrap"><input type="checkbox" id="f-own"> GAiA 자체 제작</label>
+            <label class="check"><input type="checkbox" id="f-featured"> 홈 '이번 주 사서 추천'으로 지정</label>
+          </div>
+        </div>
+
+        <div class="preview-wrap">
+          <span class="hint">미리보기</span>
+          <div class="preview" id="f-preview"></div>
+        </div>
+
+        <div class="row">
+          <button type="button" class="btn btn-navy" id="f-submit">목록에 추가</button>
+          <button type="button" class="btn btn-line" id="f-clear">입력 지우기</button>
+        </div>
+        <p class="msg" id="f-msg" role="status"></p>
+      </div>
+    </div>
+
+    <!-- 목록 관리 -->
+    <div class="panel" id="manage-panel" hidden>
+      <div class="panel-body">
+        <div class="row">
+          <label class="sr-only" for="m-q">목록 검색</label>
+          <input id="m-q" class="filter-search" type="search" placeholder="제목·출처로 찾기">
+          <select id="m-type" aria-label="유형">
+            <option value="all">전체 유형</option><option value="video">영상</option><option value="blog">블로그·아티클</option><option value="repo">GitHub</option>
+          </select>
+          <span class="hint" id="m-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="mtable">
+            <thead><tr><th>유형</th><th>제목</th><th>등록일</th><th>관리</th></tr></thead>
+            <tbody id="m-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- 저장 바 -->
+<div class="savebar" id="savebar">
+  <div class="wrap">
+    <span id="sb-text">변경 사항 없음</span>
+    <span class="sb-actions">
+      <button type="button" class="btn btn-line" id="sb-undo" disabled>변경 취소</button>
+      <button type="button" class="btn btn-line" id="sb-download" disabled>데이터 파일 내려받기</button>
+      <button type="button" class="btn btn-lav" id="sb-save" disabled>GitHub에 저장</button>
+    </span>
+  </div>
+</div>
+</main>
+
+<div id="site-footer"></div>
+<script src="data/resources.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
