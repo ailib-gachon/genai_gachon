@@ -12,7 +12,6 @@
     ['resources.html', '전체 자료', 'all'],
     ['videos.html', '영상', 'video'],
     ['articles.html', '블로그·GitHub', 'text'],
-    ['briefing.html', '주간 브리핑', 'briefing'],
     ['guide.html', '가이드라인', 'guide']
   ];
   var TYPE_NAME = { video: '영상', blog: '블로그·아티클', repo: 'GitHub' };
@@ -126,10 +125,10 @@
     var tiles = $('#tiles');
     if (tiles) {
       var count = function (t) { return R.filter(function (r) { return r.type === t; }).length; };
+      tiles.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
       tiles.innerHTML = [
         ['videos.html', 'video', '영상', '유튜브 강의와 GAiA 교육 녹화 영상', count('video') + '편'],
-        ['articles.html', 'blog', '블로그·GitHub', 'AI 기업 공식 블로그, 정리 글, 실습 저장소', (count('blog') + count('repo')) + '건'],
-        ['briefing.html', 'brief', '주간 브리핑', '사서가 고른 한 주의 생성형 AI 소식', (D.briefings || []).length + '회']
+        ['articles.html', 'blog', '블로그·GitHub', 'AI 기업 공식 블로그, 정리 글, 실습 저장소', (count('blog') + count('repo')) + '건']
       ].map(function (t) {
         return '<a class="tile" href="' + t[0] + '"><span class="tile-icon">' + ICON[t[1]] + '</span>' +
           '<strong>' + t[2] + '</strong><span>' + t[3] + '</span></a>';
@@ -318,28 +317,6 @@
     window.addEventListener('hashchange', draw);
   }
 
-  /* ---------- 주간 브리핑 ---------- */
-  function renderBriefing() {
-    var B = D.briefings || [];
-    function draw() {
-      var id = (location.hash || '').slice(1);
-      var cur = B.filter(function (b) { return b.id === id; })[0] || B[0];
-      var art = $('#brief');
-      if (!cur) { art.innerHTML = '<div class="empty"><strong>아직 브리핑이 없습니다</strong></div>'; return; }
-      art.innerHTML = '<article class="brief-article"><span class="kicker">' + esc(cur.week) + ' · ' + esc(cur.date) + '</span>' +
-        '<h2>' + esc(cur.title) + '</h2>' + cur.items.map(function (it, i) {
-          return '<section class="brief-item"><span class="meta">' + (i + 1) + ' · ' + esc(it.source) + '</span><h3>' + esc(it.title) +
-            '</h3><p>' + esc(it.summary) + '</p>' + (it.url ? '<a class="ext" href="' + esc(it.url) + '" target="_blank" rel="noopener">원문 보기 ' + ICON.ext + '</a>' : '') + '</section>';
-        }).join('') + '</article>';
-      $('#brief-list').innerHTML = B.map(function (b) {
-        return '<li><a class="brief-row" href="#' + b.id + '"' + (b === cur ? ' aria-current="true"' : '') + '><b>' + esc(b.week) +
-          '</b><span>' + esc(b.title) + '</span></a></li>';
-      }).join('');
-    }
-    draw();
-    window.addEventListener('hashchange', function () { draw(); $('#brief').scrollIntoView({ behavior: 'smooth' }); });
-  }
-
   /* 관리자 페이지 미리보기용 */
   window.GAIA_UI = { card: card, esc: esc };
 
@@ -353,6 +330,5 @@
     if (page === 'home') renderHome();
     if (page === 'list') renderList(type || null);
     if (page === 'video') renderVideo();
-    if (page === 'briefing') renderBriefing();
   });
 })();
