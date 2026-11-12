@@ -2,6 +2,36 @@
 (function () {
   'use strict';
 
+  /* ==========================================================
+   * Google 애널리틱스 측정 ID — 여기 한 줄만 바꾸면 됩니다.
+   * 예: var GA_ID = 'G-AB12CD34EF';
+   * 비워 두면('') 통계를 수집하지 않습니다. 관리자 페이지는 수집하지 않습니다.
+   * ========================================================== */
+  var GA_ID = 'G-TJ2J0DX4SB';
+
+  function gaOn() { return /^G-[A-Z0-9]+$/.test(GA_ID) && document.body && document.body.getAttribute('data-page') !== 'admin'; }
+  function initAnalytics() {
+    if (!gaOn()) return;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', GA_ID);
+  }
+  function track(name, params) {
+    if (gaOn() && window.gtag) window.gtag('event', name, params || {});
+  }
+  var searchTimer = null;
+  function trackSearch(q, where) {
+    clearTimeout(searchTimer);
+    q = (q || '').trim();
+    if (q.length < 2) return;
+    searchTimer = setTimeout(function () { track('search', { search_term: q, search_page: where }); }, 1200);
+  }
+
   var D = window.GAIA_DATA || { resources: [], briefings: [], TAGS: [] };
   var R = D.resources.slice().sort(function (a, b) {
     return (b.added || '').localeCompare(a.added || '');
@@ -59,7 +89,8 @@
     return '<footer class="site-footer"><div class="wrap">' +
       '<div class="info"><strong>가천대학교 중앙도서관 학술정보지원팀 · GAiA AI도서관</strong>' +
       '<span>GAiA실 안내데스크 031-750-5228</span>' +
-      '<span>이 사이트는 자료의 요약과 원문 링크만 제공합니다. 각 자료의 저작권은 원저작자에게 있습니다.</span></div>' +
+      '<span>이 사이트는 자료의 요약과 원문 링크만 제공합니다. 각 자료의 저작권은 원저작자에게 있습니다.</span>' +
+      (gaOn() ? '<span>서비스 개선을 위해 Google 애널리틱스로 익명 이용 통계를 수집합니다.</span>' : '') + '</div>' +
       '<a class="btn btn-line" href="guide.html#request">자료 추천 요청하기</a>' +
       '</div></footer>';
   }
@@ -91,7 +122,7 @@
     var href = isVideo ? 'video.html#' + r.id : r.url;
     var attrs = isVideo ? '' : ' target="_blank" rel="noopener"';
     var tags = (r.tags || []).map(function (t) { return '<span class="lb-tag">#' + esc(t) + '</span>'; }).join('');
-    return '<a class="card" href="' + esc(href) + '"' + attrs + '>' + thumb(r) +
+    return '<a class="card" href="' + esc(href) + '" data-id="' + esc(r.id || '') + '"' + attrs + '>' + thumb(r) +
       '<div class="card-body">' +
       '<span class="meta">' + metaLine(r) + '</span>' +
       '<span class="card-title">' + esc(r.title) + '</span>' +
@@ -153,6 +184,7 @@
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         var q = form.querySelector('input').value.trim();
+        if (q) track('search', { search_term: q, search_page: 'home' });
         try { sessionStorage.setItem('gaia-q', q); } catch (err) { /* 무시 */ }
         location.href = 'resources.html' + (q ? '?q=' + encodeURIComponent(q) : '');
       });
@@ -249,6 +281,7 @@
       } else {
         st[b.dataset.k] = b.dataset.v;
         st.limit = PAGE;
+        if (b.dataset.v !== 'all' && b.dataset.v !== 'text') track('filter_use', { filter_name: b.dataset.k, filter_value: b.dataset.v, list_page: fixedType || 'all' });
       }
       draw();
     });
@@ -256,6 +289,7 @@
       if (e.target.id !== 'fq') return;
       st.q = e.target.value;
       st.limit = PAGE;
+      trackSearch(st.q, fixedType || 'all');
       var pos = e.target.selectionStart;
       draw();
       var inp = $('#fq'); inp.focus(); try { inp.setSelectionRange(pos, pos); } catch (err) { /* 무시 */ }
@@ -275,6 +309,7 @@
         return;
       }
       document.title = v.title + ' | GAiA 생성형 AI 자료실';
+      track('video_detail_view', { video_id: v.id, video_title: v.title, channel: v.source });
       var player = v.youtubeId
         ? '<div class="player" id="player"><button type="button" aria-label="' + esc(v.title) + ' 재생">' + imgTag(ytThumb(v.youtubeId)) +
           '<span class="play">' + ICON.play + '</span></button></div>'
@@ -307,6 +342,7 @@
       var p = $('#player button');
       if (p) {
         p.addEventListener('click', function () {
+          track('video_play', { video_id: v.id, video_title: v.title, channel: v.source });
           $('#player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.youtubeId) +
             '?autoplay=1&rel=0" title="' + esc(v.title) + '" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
         });
@@ -324,6 +360,14 @@
   document.addEventListener('DOMContentLoaded', function () {
     var page = document.body.getAttribute('data-page');
     var type = document.body.getAttribute('data-type') || '';
+    initAnalytics();
+    // 자료 카드 클릭 (영상 상세 이동, 블로그·GitHub 원문 이동)
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a.card[data-id]');
+      if (!a) return;
+      var r = R.filter(function (x) { return x.id === a.getAttribute('data-id'); })[0];
+      if (r) track('select_content', { content_type: r.type, item_id: r.id, item_name: r.title, source: r.source, page: page + (type ? '-' + type : '') });
+    });
     var active = page === 'list' ? (type || 'all') : (page === 'video' ? 'video' : page);
     var h = $('#site-header'); if (h) h.outerHTML = header(active);
     var f = $('#site-footer'); if (f) f.outerHTML = footer();
